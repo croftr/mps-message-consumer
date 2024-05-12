@@ -78,12 +78,11 @@ export const readDivisionMessage = async () => {
             const mp= JSON.parse(message.Body)
             // @ts-ignore
             divisions.push(mp)
-               
-            //TODO put this back
-            // await sqs.deleteMessage({
-            //     QueueUrl: queueURL,
-            //     ReceiptHandle: message.ReceiptHandle
-            // }).promise();
+                           
+            await sqs.deleteMessage({
+                QueueUrl: queueURL,
+                ReceiptHandle: message.ReceiptHandle
+            }).promise();
         }
     }
 

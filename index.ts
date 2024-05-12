@@ -28,8 +28,7 @@ const createRelationshipsFromVotes = async () => {
 
     //for each vote from the message queue 
     for (let division of divisions) {
-      logger.info(`Got division of ${division.title}`)
-
+      
       //make api call to get division details and all votes on it
       const dvisionDetails: DivisionDetails = await getDivisionDetails(division.id);
 
@@ -46,14 +45,14 @@ const createRelationshipsFromVotes = async () => {
         NoCount: dvisionDetails.division.NoCount,
         category: getCategory(dvisionDetails.division.Title)
       }
+
+      logger.info(`Creating dvision${dvisionDetails.division.Title}`)
       await createDivisionNode(divisionNode);
-
-      logger.info(`Got dvisionDetails ${dvisionDetails.division.Title}`)
-
+      
+      
+      logger.info(`Creating VOTED_FOR aye relationships`)
       for (let voter of dvisionDetails.ayes) {
-
-        logger.info(`Got ayes ${voter.Name}`)
-
+        
         let vote: VotedFor = {
           mpId: voter.MemberId,
           divisionId: division.id,
@@ -63,10 +62,11 @@ const createRelationshipsFromVotes = async () => {
         await createVotedForDivision(vote);
 
       }
+      logger.info(`Created ${dvisionDetails.ayes.length} VOTED_FOR aye relationships`)
 
+      logger.info(`Creating VOTED_FOR no relationships`)
       for (let voter of dvisionDetails.noes) {
-        logger.info(`Got noes ${voter.Name}`)
-
+      
         let vote: VotedFor = {
           mpId: voter.MemberId,
           divisionId: division.id,
@@ -75,6 +75,7 @@ const createRelationshipsFromVotes = async () => {
 
         await createVotedForDivision(vote);
       }
+      logger.info(`Created ${dvisionDetails.noes.length} VOTED_FOR no relationships`)
       
     }
 
@@ -196,6 +197,18 @@ const createRelationshipsFromMps = async () => {
 
 }
 
-// createRelationshipsFromMps();
-createRelationshipsFromVotes();
+
+const go = async  () => {
+
+  if (process.env.MODE === "RECREATE_EVERYTHING") {
+    logger.info("Attempting to recreate all mps and division relationships");    
+    createRelationshipsFromMps();    
+  } else {
+    logger.info("Checking for new commons votes to add to database");
+    createRelationshipsFromVotes();
+  }
+
+}
+
+go ()
 
