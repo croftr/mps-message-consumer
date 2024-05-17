@@ -206,10 +206,10 @@ const go = async () => {
   try {
     if (process.env.MODE === "RECREATE_EVERYTHING") {
       logger.info("Attempting to recreate all mps and division relationships");
-      createRelationshipsFromMps();
+      await createRelationshipsFromMps();
     } else {
       logger.info("Checking for new commons votes to add to database");
-      createRelationshipsFromVotes();
+      await createRelationshipsFromVotes();
     }
   } catch (error) {
     // @ts-ignore      
