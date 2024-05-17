@@ -5,6 +5,7 @@ import { Division, DivisionDetails, DivisionMessage, MemberVoting } from "./src/
 import { VotedFor } from "./src/models/relationships";
 import { readDivisionMessage, readMpMessage } from "./src/messageManager";
 import { getCategory } from "./src/utils/categoryManager";
+import fs from "fs";
 
 const logger = require('./src/logger');
 
@@ -23,12 +24,12 @@ const createRelationshipsFromVotes = async () => {
   await setupNeo();
 
   while (messages_in_queue) {
-    
+
     const divisions: Array<DivisionMessage> = await readDivisionMessage();
 
     //for each vote from the message queue 
     for (let division of divisions) {
-      
+
       //make api call to get division details and all votes on it
       const dvisionDetails: DivisionDetails = await getDivisionDetails(division.id);
 
@@ -48,11 +49,11 @@ const createRelationshipsFromVotes = async () => {
 
       logger.info(`Creating dvision${dvisionDetails.division.Title}`)
       await createDivisionNode(divisionNode);
-      
-      
+
+
       logger.info(`Creating VOTED_FOR aye relationships`)
       for (let voter of dvisionDetails.ayes) {
-        
+
         let vote: VotedFor = {
           mpId: voter.MemberId,
           divisionId: division.id,
@@ -66,7 +67,7 @@ const createRelationshipsFromVotes = async () => {
 
       logger.info(`Creating VOTED_FOR no relationships`)
       for (let voter of dvisionDetails.noes) {
-      
+
         let vote: VotedFor = {
           mpId: voter.MemberId,
           divisionId: division.id,
@@ -76,7 +77,7 @@ const createRelationshipsFromVotes = async () => {
         await createVotedForDivision(vote);
       }
       logger.info(`Created ${dvisionDetails.noes.length} VOTED_FOR no relationships`)
-      
+
     }
 
     if (divisions.length === 0) {
@@ -198,17 +199,27 @@ const createRelationshipsFromMps = async () => {
 }
 
 
-const go = async  () => {
+const go = async () => {
 
-  if (process.env.MODE === "RECREATE_EVERYTHING") {
-    logger.info("Attempting to recreate all mps and division relationships");    
-    createRelationshipsFromMps();    
-  } else {
-    logger.info("Checking for new commons votes to add to database");
-    createRelationshipsFromVotes();
+  logger.info(`Running in mode ${process.env.MODE}`)
+
+  try {
+    if (process.env.MODE === "RECREATE_EVERYTHING") {
+      logger.info("Attempting to recreate all mps and division relationships");
+      createRelationshipsFromMps();
+    } else {
+      logger.info("Checking for new commons votes to add to database");
+      createRelationshipsFromVotes();
+    }
+  } catch (error) {
+    // @ts-ignore      
+    logger.error(`An error has occured ${error.message}`);
+    console.error("Error", error);
+
+  } finally {
+    fs.writeFileSync('shutdown.txt', 'Hey there!');
   }
-
 }
 
-go ()
+go()
 
