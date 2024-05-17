@@ -5,7 +5,7 @@ import { Division, DivisionDetails, DivisionMessage, MemberVoting } from "./src/
 import { VotedFor } from "./src/models/relationships";
 import { readDivisionMessage, readMpMessage } from "./src/messageManager";
 import { getCategory } from "./src/utils/categoryManager";
-import fs from "fs";
+import { exec } from "child_process";
 
 const logger = require('./src/logger');
 
@@ -217,7 +217,13 @@ const go = async () => {
     console.error("Error", error);
 
   } finally {
-    fs.writeFileSync('shutdown.txt', 'Hey there!');
+    exec('shutdown -h now', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing shutdown: ${error}`);
+        return;
+      }
+      console.log(`Shutdown command executed successfully.`);
+    });
   }
 }
 
